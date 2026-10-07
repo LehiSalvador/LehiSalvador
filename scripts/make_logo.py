@@ -64,7 +64,7 @@ def render_logo(source):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=ROOT / 'assets/salva-source.png')
-    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-logo.svg')
+    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-brand.svg')
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(render_logo(args.source), encoding='utf-8')

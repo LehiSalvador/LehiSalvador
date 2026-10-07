@@ -38,8 +38,8 @@ def save_outputs(root, data):
     # Render all content before touching the previous good snapshot.
     outputs = {
         'data/contributions.json': json.dumps(data, indent=2, ensure_ascii=False) + '\n',
-        'assets/contributions.svg': render_heatmap(data),
-        'assets/stats.svg': render_stats(data),
+        'assets/public-calendar.svg': render_heatmap(data),
+        'assets/github-summary.svg': render_stats(data),
     }
     staged = []
     try:

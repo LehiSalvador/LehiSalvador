@@ -9,8 +9,8 @@ Transformo necesidades de negocio en productos digitales y soluciones para opera
 <p><a href="https://salvasystems.site"><b>Salva Systems</b></a> &nbsp; · &nbsp; <a href="#proyectos"><b>Proyectos</b></a> &nbsp; · &nbsp; <a href="#contacto"><b>Contacto</b></a></p>
 
 <p>
-  <img src="https://raw.githubusercontent.com/LehiSalvador/LehiSalvador/main/assets/salva-logo.svg?v=2" width="420" alt="Logo oficial de Salva Systems dibujado en ASCII con animación de escritura." />
-  <img src="https://raw.githubusercontent.com/LehiSalvador/LehiSalvador/main/assets/stats.svg?v=2" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador: contribuciones, rachas, días activos y actividad mensual." />
+  <img src="./assets/salva-brand.svg" width="420" alt="Logo oficial de Salva Systems dibujado en ASCII con animación de escritura." />
+  <img src="./assets/github-summary.svg" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador: contribuciones, rachas, días activos y actividad mensual." />
 </p>
 
 </div>
@@ -49,7 +49,7 @@ Empresa de tecnología fundada en **marzo de 2026**, enfocada en digitalización
 ## Contribuciones públicas
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/LehiSalvador/LehiSalvador/main/assets/contributions.svg?v=2" width="860" alt="Calendario animado de contribuciones públicas de Lehi Salvador en GitHub, actualizado diariamente." />
+  <img src="./assets/public-calendar.svg" width="860" alt="Calendario animado de contribuciones públicas de Lehi Salvador en GitHub, actualizado diariamente." />
 </p>
 
 ## Contacto

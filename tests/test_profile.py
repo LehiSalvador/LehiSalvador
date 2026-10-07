@@ -100,8 +100,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions.svg': '<svg>previous calendar</svg>',
-                        'assets/stats.svg': '<svg>previous stats</svg>'}
+                        'assets/public-calendar.svg': '<svg>previous calendar</svg>',
+                        'assets/github-summary.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value='<html>blocked</html>'):
@@ -124,8 +124,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions.svg': '<svg>previous calendar</svg>',
-                        'assets/stats.svg': '<svg>previous stats</svg>'}
+                        'assets/public-calendar.svg': '<svg>previous calendar</svg>',
+                        'assets/github-summary.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value=markup):
