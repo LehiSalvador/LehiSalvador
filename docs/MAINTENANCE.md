@@ -60,7 +60,32 @@ generator require running `python scripts/make_logo.py` locally and committing
 the resulting SVG as well.
 
 The logo and statistics have matching 840 × 880 viewboxes and display at
-420px each in the GitHub table. The full-width calendar displays at 860px.
+420px each. Inline images sit side by side on desktop and wrap into separate
+rows when the available width is smaller. The full-width calendar displays at 860px.
 The SVG backgrounds retain contrast in light and dark GitHub themes. For
 mobile viewers, the prose below the artwork repeats the role, stack, projects
 and links in selectable, readable text.
+
+## Labels and counter animation
+
+Public labels and profile prose use Spanish. Only the ASCII logo uses a
+monospaced font; card labels use a readable sans-serif family.
+
+Each metric uses a single clipped column of values, advanced by one CSS
+stepped translation. The clip is shorter than the distance between rows,
+so two numbers cannot occupy the visible window at the same time. Integer
+metrics keep integer intermediate values; only the daily average uses one
+decimal. Units remain at a fixed position outside the counter column.
+Both SVG transform attributes and reduced-motion styles retain final values.
+
+## Project presentations
+
+The profile links to public presentations for Salva Systems, Aplomo, ATENOR,
+Careertrackly, UFlex, SalvaOps, RUNIIS and Archivo STEAM. Public documentation
+does not imply that a repository contains the entire product implementation.
+Private implementation repositories remain private. Product descriptions and
+development stages reflect the owner's October 2026 inventory.
+
+The GitHub-native contribution activity section is controlled by account
+settings, not the README. The owner chose to keep the account profile public;
+private contribution counts are not publicly shared.

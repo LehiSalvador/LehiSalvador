@@ -76,6 +76,24 @@ class ContributionTests(unittest.TestCase):
         cells = graph.findall(".//{http://www.w3.org/2000/svg}rect[@class='day']")
         self.assertEqual(len(cells), 2)
 
+    def test_integer_counters_keep_integer_frames_and_one_visible_row(self):
+        data = summarize([cell("2026-10-05", 262, 4), cell("2026-10-06", 0)], self.today)
+        data.update(username="LehiSalvador", generated_at="2026-10-06T10:00:00Z")
+        root = ET.fromstring(render_stats(data))
+        ns = '{http://www.w3.org/2000/svg}'
+        strip = root.find(f".//{ns}g[@data-metric='contributions']")
+        self.assertIsNotNone(strip, 'Counter must use one clipped value column')
+        values = [node.text for node in strip.findall(f'{ns}text')]
+        self.assertEqual(values[0], '0')
+        self.assertEqual(values[-1], '262')
+        for value in values:
+            self.assertRegex(value, r'^\d+(?: \d{3})*$')
+        clip = root.find(f".//{ns}clipPath[@id='counter-2']/{ns}rect")
+        self.assertIsNotNone(clip)
+        rows = strip.findall(f'{ns}text')
+        row_spacing = float(rows[1].get('y')) - float(rows[0].get('y'))
+        self.assertLess(float(clip.get('height')), row_spacing)
+
     def test_failed_scrape_preserves_previous_snapshot_and_art(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

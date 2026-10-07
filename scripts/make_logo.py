@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def render_logo(source):
-    cols, rows, left, top, art_w, art_h = 144, 76, 48, 61, 744, 744
+    cols, rows, left, top, art_w, art_h = 144, 76, 48, 65, 744, 744
     # Source has a black background. Dark pixels become spaces, preserving it.
     image = Image.open(source).convert("RGB")
     # Remove avatar padding, then retain a square crop so the mark is not stretched.
@@ -37,8 +37,8 @@ def render_logo(source):
 .ready{{animation:ready .7s ease-out both;animation-delay:5.8s}}
 @keyframes ready{{from{{opacity:0}}to{{opacity:1}}}}
 @media(prefers-reduced-motion:reduce){{.wipe,.ready{{animation:none!important}}.cursor{{display:none!important}}}}'''
-    parts = frame(840, 880, "lehi@github: ~$ ./salva.sh", "Salva Systems animated ASCII logo",
-                  "Official Salva Systems symbol and wordmark rendered as monochrome ASCII, revealed row by row. Founded by Lehi Salvador.", css)
+    parts = frame(840, 880, "Salva Systems", "Logo animado de Salva Systems",
+                  "Símbolo y nombre oficiales de Salva Systems dibujados en ASCII, revelados línea por línea. Fundada por Lehi Salvador.", css)
     for row in range(rows):
         characters = []
         for col in range(cols):
@@ -50,13 +50,13 @@ def render_logo(source):
         delay = row * row_time
         parts.append(f'<defs><clipPath id="row{row}"><rect class="wipe" x="{left}" y="{y:.2f}" width="{art_w}" '
                      f'height="{cell_h + .5:.2f}" style="animation-delay:{delay:.4f}s"/></clipPath></defs>')
-        parts.append(f'<text xml:space="preserve" x="{left}" y="{y + cell_h * .79:.2f}" fill="{INK}" font-size="{cell_h * .84:.2f}" '
+        parts.append(f'<text font-family="Consolas, Menlo, Monaco, monospace" xml:space="preserve" x="{left}" y="{y + cell_h * .79:.2f}" fill="{INK}" font-size="{cell_h * .84:.2f}" '
                      f'textLength="{art_w}" lengthAdjust="spacing" clip-path="url(#row{row})">{escape("".join(characters))}</text>')
         parts.append(f'<rect class="cursor" opacity="0" x="{left}" y="{y:.2f}" width="{cell_w:.2f}" height="{cell_h:.2f}" '
                      f'fill="{ROSE}" style="animation-delay:{delay:.4f}s"/>')
     parts.append(f'<path d="M24 819H816" stroke="#30363d"/>')
-    parts.append(label(25, 843, "lehi@github:~$ whoami", 16, MUTED))
-    parts.append(label(25, 867, "Lehi Salvador / Founder, Salva Systems", 16, INK, 'class="ready"'))
+    parts.append(label(25, 843, "Tecnología aplicada a operaciones", 19, MUTED))
+    parts.append(label(25, 869, "Lehi Salvador · Founder", 20, INK, 'class="ready"'))
     parts.append('</svg>')
     return ''.join(parts)
 
