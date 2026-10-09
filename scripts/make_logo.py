@@ -8,7 +8,7 @@ from pathlib import Path
 import argparse
 from PIL import Image
 
-from render_profile import BG, INK, MUTED, ROSE, fire_border, frame, label
+from render_profile import BG, INK, MUTED, ROSE, gold_border, frame, label
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,7 +63,7 @@ def render_logo(source):
     parts.append(f'<path d="M24 819H816" stroke="#30363d"/>')
     parts.append(label(25, 843, "Tecnología aplicada a operaciones", 19, MUTED))
     parts.append(label(25, 869, "Lehi Salvador · Founder", 20, INK, 'class="ready"'))
-    parts.append(fire_border(840, 880))
+    parts.append(gold_border(840, 880))
     parts.append('</svg>')
     return ''.join(parts)
 
@@ -71,7 +71,7 @@ def render_logo(source):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=ROOT / 'assets/salva-source.png')
-    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-pixel-fire.svg')
+    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-gold-aura.svg')
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(render_logo(args.source), encoding='utf-8')
