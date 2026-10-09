@@ -17,7 +17,7 @@ INK, MUTED, ROSE, GREEN = "#e6edf3", "#9da7b3", "#bc7886", "#39d353"
 PALETTE = ["#1c2530", "#0e4429", "#006d32", "#26a641", GREEN]
 MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 FONT = "Arial, Helvetica, sans-serif"
-FIRE_CSS = """.pixel-fire{image-rendering:pixelated;animation:fire-frames 1.6s steps(16,end) infinite}
+FIRE_CSS = """.pixel-fire{image-rendering:pixelated;animation:fire-frames 4s steps(32,end) infinite}
 @keyframes fire-frames{from{transform:translateY(0)}to{transform:translateY(var(--fire-travel))}}
 @keyframes ember-glow{0%,100%{opacity:.45}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.pixel-fire{animation:none!important}}"""
@@ -33,17 +33,17 @@ def _fire_texture(filename):
 
 
 def fire_border(width: int, height: int) -> str:
-    """Play sixteen independently drawn fire frames through a clipped sprite strip."""
+    """Play thirty-two independently drawn fire frames through a clipped sprite strip."""
     filename = 'fire-pixels-card.png' if (width, height) == (840, 880) else 'fire-pixels-calendar.png'
     uri, atlas_w, atlas_h = _fire_texture(filename)
     frame_w, frame_h = width + 64, height + 64
-    if (atlas_w, atlas_h) != (frame_w, frame_h * 16):
+    if (atlas_w, atlas_h) != (frame_w // 2, frame_h // 2 * 32):
         raise ValueError('Pixel fire atlas dimensions do not match this card')
     return (
         f'<defs><clipPath id="fire-window"><rect x="-32" y="-32" width="{frame_w}" height="{frame_h}"/></clipPath></defs>'
         '<g clip-path="url(#fire-window)" aria-hidden="true">'
-        f'<image class="pixel-fire" x="-32" y="-32" width="{atlas_w}" height="{atlas_h}" '
-        f'style="--fire-travel:-{atlas_h}px" href="{uri}"/></g>'
+        f'<image class="pixel-fire" x="-32" y="-32" width="{frame_w}" height="{frame_h * 32}" '
+        f'style="--fire-travel:-{frame_h * 32}px" href="{uri}"/></g>'
     )
 
 

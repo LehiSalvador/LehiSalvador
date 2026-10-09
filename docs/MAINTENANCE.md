@@ -87,15 +87,16 @@ fills. The wave remains conspicuous with reduced motion because its stationary
 outlines animate only opacity. It also runs for a calendar with no activity;
 it is decorative, not an indication of contributions.
 
-`scripts/make_pixel_fire.py` draws sixteen distinct pixel-art frames. Each
-flame tongue grows, leans and fades on its own cycle; colors and sparks change
-between frames. Four-pixel blocks use a yellow, gold, orange and red palette.
+`scripts/make_pixel_fire.py` draws thirty-two distinct pixel-art frames. Each
+flame tongue grows, leans and fades on its own cycle; colors change
+between frames. Flames reach at most 16px outward; no flashing sparks. Four-pixel blocks use a yellow, gold, orange and red palette.
 Every frame has a transparent interior, so flames never cover content.
 
 The two committed PNG sprite strips are `fire-pixels-card.png` and
 `fire-pixels-calendar.png`. `fire_border()` embeds the matching strip into
-each SVG. A clipped window and `steps(16,end)` play the frames at ten frames
-per second in a continuous 1.6-second loop. No distortion filters or external
+each SVG. Strips are stored at half resolution with nearest-neighbor
+sampling to preserve pixel edges and keep texture height below 16384px. A clipped window and `steps(32,end)` play the frames at eight frames
+per second in a continuous four-second loop. No distortion filters or external
 image requests are used. Reduced motion displays the first frame.
 
 To rebuild the fire and all three graphics:
@@ -110,8 +111,8 @@ python -m unittest discover -s tests -v
 Commit both PNG strips and the three regenerated SVGs. The daily data workflow
 remains dependency-free; it reads the existing strips with the standard library.
 
-Published assets are `salva-golden-fire.svg`, `github-golden-fire.svg`, and
-`contributions-golden-fire.svg`. README, generators and the daily workflow must keep
+Published assets are `salva-pixel-fire.svg`, `github-pixel-fire.svg`, and
+`contributions-pixel-fire.svg`. README, generators and the daily workflow must keep
 these paths aligned. These distinct paths replace older cached artwork.
 Reloading an image is not guaranteed to restart its entrance sequence; ambient
 loops provide visible motion after the entrance has completed.
