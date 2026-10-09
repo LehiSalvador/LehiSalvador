@@ -9,6 +9,7 @@ from unittest.mock import patch
 from scripts.profile_data import build_grid, parse_calendar, summarize
 from scripts.render_profile import render_heatmap, render_stats
 from scripts.update_profile import save_outputs, update, validate_calendar_span
+from scripts.make_pixel_fire import fire_pixels, FRAMES, PIXEL
 
 
 def cell(date, count, level=0):
@@ -107,10 +108,11 @@ class ContributionTests(unittest.TestCase):
         svg = render_stats(data)
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
-        self.assertIsNotNone(root.find(f".//{ns}g[@class='fire-live']"))
+        self.assertIsNotNone(root.find(f".//{ns}image[@class='pixel-fire']"))
         self.assertIn('infinite', svg)
-        self.assertIn('fire-calm', svg)
-        self.assertIn('.fire-live{display:none}', svg)
+        self.assertIn('steps(16,end)', svg)
+        self.assertIn('.pixel-fire{animation:none', svg)
+        self.assertNotIn('feDisplacementMap', svg)
 
     def test_daily_generation_targets_the_readme_assets(self):
         data = summarize([cell('2026-10-05', 1, 1), cell('2026-10-06', 0)], self.today)
@@ -132,19 +134,22 @@ class ContributionTests(unittest.TestCase):
         for renderer in (render_heatmap, render_stats):
             with self.subTest(renderer=renderer.__name__):
                 root = ET.fromstring(renderer(data))
-                texture = root.find(f".//{ns}image[@id='fire-texture']")
+                texture = root.find(f".//{ns}image[@class='pixel-fire']")
                 self.assertIsNotNone(texture)
                 self.assertTrue(texture.get('href').startswith('data:image/png;base64,'))
-                slices = root.findall(f".//{ns}g[@class='fire-live']/{ns}g/{ns}svg")
-                self.assertGreaterEqual(len(slices), 8)
-                for part in slices:
-                    _, _, source_w, source_h = map(float, part.get('viewBox').split())
-                    target_ratio = float(part.get('width')) / float(part.get('height'))
-                    self.assertAlmostEqual(target_ratio, source_w / source_h, places=2,
-                                           msg='Fire texture must retain proportions, including tiled edges')
-                self.assertIsNotNone(root.find(f".//{ns}mask[@id='fire-ring']/{ns}rect[@fill='black']"))
+                clip = root.find(f".//{ns}clipPath[@id='fire-window']/{ns}rect")
+                self.assertIsNotNone(clip)
+                self.assertEqual(float(texture.get('height')), float(clip.get('height')) * FRAMES)
                 self.assertTrue(root.get('viewBox').startswith('-32 -32 '))
                 self.assertNotIn('fire-tongue', renderer(data))
+
+    def test_pixel_fire_has_distinct_frames_a_seamless_loop_and_no_pixels_over_content(self):
+        first, second = fire_pixels(48, 40, 0), fire_pixels(48, 40, 1)
+        self.assertNotEqual(first, second)
+        self.assertEqual(first, fire_pixels(48, 40, FRAMES))
+        for frame in range(FRAMES):
+            for x, y, _ in fire_pixels(48, 40, frame):
+                self.assertFalse(x + PIXEL > 0 and x < 48 and y + PIXEL > 0 and y < 40)
 
     def test_calendar_has_visible_wave_even_with_no_activity_without_faking_contributions(self):
         data = summarize([cell('2026-10-05', 0), cell('2026-10-06', 0)], self.today)
@@ -164,10 +169,10 @@ class ContributionTests(unittest.TestCase):
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
         self.assertIsNotNone(root.find(f".//{ns}g[@class='logo-float']/{ns}g[@class='logo-light']/{ns}text"))
-        texture = root.find(f".//{ns}image[@id='fire-texture']")
+        texture = root.find(f".//{ns}image[@class='pixel-fire']")
         self.assertIsNotNone(texture)
         self.assertEqual(base64.b64decode(texture.get('href').split(',', 1)[1]),
-                         (root_path / 'assets/fire-frame.png').read_bytes())
+                         (root_path / 'assets/fire-pixels-card.png').read_bytes())
         self.assertIn('float 9s ease-in-out infinite', svg)
         self.assertIn('logo-glow 9s ease-in-out infinite', svg)
         reduced = svg.split('@media(prefers-reduced-motion:reduce)', 1)[1]

@@ -17,77 +17,34 @@ INK, MUTED, ROSE, GREEN = "#e6edf3", "#9da7b3", "#bc7886", "#39d353"
 PALETTE = ["#1c2530", "#0e4429", "#006d32", "#26a641", GREEN]
 MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 FONT = "Arial, Helvetica, sans-serif"
-FIRE_CSS = '''.fire-live,.fire-calm{animation:fire-burn 3.6s ease-in-out infinite}
-.fire-calm{display:none}
-@keyframes fire-burn{0%,100%{opacity:.8}50%{opacity:1}}
+FIRE_CSS = """.pixel-fire{image-rendering:pixelated;animation:fire-frames 1.6s steps(16,end) infinite}
+@keyframes fire-frames{from{transform:translateY(0)}to{transform:translateY(var(--fire-travel))}}
 @keyframes ember-glow{0%,100%{opacity:.45}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.fire-live{display:none}.fire-calm{display:inline;animation-duration:5s}}'''
+@media(prefers-reduced-motion:reduce){.pixel-fire{animation:none!important}}"""
 
 
-@lru_cache(maxsize=1)
-def _fire_texture():
-    png = (Path(__file__).resolve().parents[1] / 'assets/fire-frame.png').read_bytes()
+@lru_cache(maxsize=2)
+def _fire_texture(filename):
+    png = (Path(__file__).resolve().parents[1] / 'assets' / filename).read_bytes()
     if png[:8] != b'\x89PNG\r\n\x1a\n' or png[25] != 6:
-        raise ValueError('Fire texture must be an RGBA PNG')
+        raise ValueError('Pixel fire atlas must be an RGBA PNG')
     width, height = struct.unpack('>II', png[16:24])
     return 'data:image/png;base64,' + base64.b64encode(png).decode('ascii'), width, height
 
 
 def fire_border(width: int, height: int) -> str:
-    """Nine-slice real fire texture; mask keeps all flames outside the content."""
-    uri, source_w, source_h = _fire_texture()
-    parts = [
-        f'<defs><image id="fire-texture" width="{source_w}" height="{source_h}" href="{uri}"/>',
-        f'<mask id="fire-ring" maskUnits="userSpaceOnUse" x="-32" y="-32" width="{width + 64}" height="{height + 64}">'
-        f'<rect x="-32" y="-32" width="{width + 64}" height="{height + 64}" fill="white"/>'
-        f'<rect width="{width}" height="{height}" rx="14" fill="black"/></mask>',
-        '<filter id="fire-distortion" x="-4%" y="-4%" width="108%" height="108%">'
-        '<feTurbulence type="fractalNoise" baseFrequency=".025 .06" numOctaves="2" seed="7" result="noise">'
-        '<animate attributeName="baseFrequency" values=".025 .06;.03 .085;.02 .07;.025 .06" dur="4s" repeatCount="indefinite"/>'
-        '</feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>'
-        '</filter></defs>',
-    ]
-    cut_x, cut_y = round(source_w * .16), round(source_h * .16)
-    source_x, source_y = (0, cut_x, source_w - cut_x), (0, cut_y, source_h - cut_y)
-    source_widths = (cut_x, source_w - 2 * cut_x, cut_x)
-    source_heights = (cut_y, source_h - 2 * cut_y, cut_y)
-    target_x, target_y = (-32, 0, width), (-32, 0, height)
-    target_widths, target_heights = (32, width, 32), (32, height, 32)
-    slices = []
-
-    def part(x, y, w, h, sx, sy, sw, sh):
-        slices.append(f'<svg x="{x:.4f}" y="{y:.4f}" width="{w:.4f}" height="{h:.4f}" '
-                      f'viewBox="{sx:.4f} {sy:.4f} {sw:.4f} {sh:.4f}" '
-                      'preserveAspectRatio="none"><use href="#fire-texture"/></svg>')
-
-    for row in range(3):
-        for column in range(3):
-            if row == column == 1:
-                continue
-            if column == 1:
-                # Tile the long edges at uniform scale; stretching would flatten flames.
-                scale = 32 / source_heights[row]
-                tile_w = source_widths[column] * scale
-                offset = 0
-                while offset < width - .0001:
-                    w = min(tile_w, width - offset)
-                    part(offset, target_y[row], w, 32, source_x[column], source_y[row], w / scale, source_heights[row])
-                    offset += w
-            elif row == 1:
-                scale = 32 / source_widths[column]
-                tile_h = source_heights[row] * scale
-                offset = 0
-                while offset < height - .0001:
-                    h = min(tile_h, height - offset)
-                    part(target_x[column], offset, 32, h, source_x[column], source_y[row], source_widths[column], h / scale)
-                    offset += h
-            else:
-                part(target_x[column], target_y[row], target_widths[column], target_heights[row],
-                     source_x[column], source_y[row], source_widths[column], source_heights[row])
-    artwork = ''.join(slices)
-    parts.append(f'<g class="fire-live" aria-hidden="true" mask="url(#fire-ring)"><g filter="url(#fire-distortion)">{artwork}</g></g>')
-    parts.append(f'<g class="fire-calm" aria-hidden="true" mask="url(#fire-ring)">{artwork}</g>')
-    return ''.join(parts)
+    """Play sixteen independently drawn fire frames through a clipped sprite strip."""
+    filename = 'fire-pixels-card.png' if (width, height) == (840, 880) else 'fire-pixels-calendar.png'
+    uri, atlas_w, atlas_h = _fire_texture(filename)
+    frame_w, frame_h = width + 64, height + 64
+    if (atlas_w, atlas_h) != (frame_w, frame_h * 16):
+        raise ValueError('Pixel fire atlas dimensions do not match this card')
+    return (
+        f'<defs><clipPath id="fire-window"><rect x="-32" y="-32" width="{frame_w}" height="{frame_h}"/></clipPath></defs>'
+        '<g clip-path="url(#fire-window)" aria-hidden="true">'
+        f'<image class="pixel-fire" x="-32" y="-32" width="{atlas_w}" height="{atlas_h}" '
+        f'style="--fire-travel:-{atlas_h}px" href="{uri}"/></g>'
+    )
 
 
 def label(x, y, value, size=16, fill=INK, extra=""):

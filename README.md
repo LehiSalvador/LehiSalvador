@@ -59,7 +59,7 @@ Para proyectos de digitalización, automatización o software empresarial: **[sa
 <details>
 <summary>Acerca de este perfil</summary>
 
-Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. Los tres gráficos tienen marcos de llamas doradas animadas. Una onda luminosa recorre el calendario mientras el perfil está abierto. Con movimiento reducido, los desplazamientos y efectos de entrada se sustituyen por cambios de brillo; la onda sigue visible y las cifras permanecen estables.
+Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. Los tres gráficos tienen marcos de fuego en pixel art con 16 fotogramas distintos en bucle. Una onda luminosa recorre el calendario mientras el perfil está abierto. Con movimiento reducido, el fuego queda estático y se desactivan desplazamientos y efectos de entrada; la onda sigue visible y las cifras permanecen estables.
 
 [Guía de mantenimiento](./docs/MAINTENANCE.md) · [Actualización automática](./.github/workflows/update-profile.yml)
 

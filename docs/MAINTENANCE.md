@@ -35,8 +35,8 @@ Current streak tolerates a zero-count unfinished day. The longest streak,
 best day and monthly bars cover the displayed calendar period, not the
 account's entire history. Partial first and last months remain partial.
 When reduced motion is preferred, entrance effects, scaling, logo translation
-and fire distortion stop. Opacity changes continue: the logo glows,
-active calendar cells pulse, all three flame borders glow, and the calendar
+and pixel-fire frame playback stop. Opacity changes continue: the logo glows,
+active calendar cells pulse, and the calendar
 wave runs through a sequence of stationary column outlines. This
 keeps the owner's requested ambient animation without spatial movement.
 Final content remains visible when CSS animation is unavailable.
@@ -44,7 +44,7 @@ Final content remains visible when CSS animation is unavailable.
 ## Change the logo
 
 `assets/salva-source.png` is the original Salva Systems image from the account
-avatar. Only regeneration of the logo requires Pillow:
+avatar. Rebuilding the logo or the pixel-fire atlases requires Pillow:
 
 ```sh
 python -m pip install Pillow
@@ -87,21 +87,28 @@ fills. The wave remains conspicuous with reduced motion because its stationary
 outlines animate only opacity. It also runs for a calendar with no activity;
 it is decorative, not an indication of contributions.
 
-`fire_border()` embeds `assets/fire-frame.png` into all three graphics. This
-transparent texture was generated with the built-in imagegen tool using the
-owner's realistic orange-and-gold flame reference. Corners retain proportions;
-edge textures tile at uniform scale rather than stretching. An interior mask
-keeps flames outside the content rectangle. Normal motion uses continuously
-animated SVG turbulence/displacement and brightness; reduced motion switches
-to an undistorted texture with a slower brightness loop. Metrics and chart
-labels remain stable. The PNG is inlined as a data URL, so no external image
-requests are required inside the SVG.
+`scripts/make_pixel_fire.py` draws sixteen distinct pixel-art frames. Each
+flame tongue grows, leans and fades on its own cycle; colors and sparks change
+between frames. Four-pixel blocks use a yellow, gold, orange and red palette.
+Every frame has a transparent interior, so flames never cover content.
 
-After replacing the PNG texture, regenerate the logo with `make_logo.py` and
-the data graphics with `update_profile.py`, then commit all four assets. The
-daily data workflow remains dependency-free; it reads the existing PNG with
-the standard library. Each standalone SVG contains approximately 2.2MB of
-embedded artwork, so first image loading can take longer than the old vectors.
+The two committed PNG sprite strips are `fire-pixels-card.png` and
+`fire-pixels-calendar.png`. `fire_border()` embeds the matching strip into
+each SVG. A clipped window and `steps(16,end)` play the frames at ten frames
+per second in a continuous 1.6-second loop. No distortion filters or external
+image requests are used. Reduced motion displays the first frame.
+
+To rebuild the fire and all three graphics:
+
+```sh
+python scripts/make_pixel_fire.py
+python scripts/make_logo.py
+python scripts/update_profile.py
+python -m unittest discover -s tests -v
+```
+
+Commit both PNG strips and the three regenerated SVGs. The daily data workflow
+remains dependency-free; it reads the existing strips with the standard library.
 
 Published assets are `salva-golden-fire.svg`, `github-golden-fire.svg`, and
 `contributions-golden-fire.svg`. README, generators and the daily workflow must keep
