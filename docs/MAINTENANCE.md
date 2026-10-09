@@ -35,7 +35,7 @@ Current streak tolerates a zero-count unfinished day. The longest streak,
 best day and monthly bars cover the displayed calendar period, not the
 account's entire history. Partial first and last months remain partial.
 When reduced motion is preferred, entrance effects, scaling, logo translation
-and the traveling border stop. Opacity changes continue: the logo glows,
+and fire distortion stop. Opacity changes continue: the logo glows,
 active calendar cells pulse, all three flame borders glow, and the calendar
 wave runs through a sequence of stationary column outlines. This
 keeps the owner's requested ambient animation without spatial movement.
@@ -66,7 +66,7 @@ generator require running `python scripts/make_logo.py` locally and committing
 the resulting SVG as well.
 
 The logo and statistics retain 840 × 880 content rectangles inside matching
-888 × 928 viewboxes. The 24px gutter on every side contains the flames without
+904 × 944 viewboxes. The 32px gutter on every side contains the flames without
 covering content. Both display at 420px each. Inline images sit side by side on desktop and wrap into separate
 rows when the available width is smaller. The full-width calendar displays at 860px.
 The SVG backgrounds retain contrast in light and dark GitHub themes. For
@@ -87,10 +87,21 @@ fills. The wave remains conspicuous with reduced motion because its stationary
 outlines animate only opacity. It also runs for a calendar with no activity;
 it is decorative, not an indication of contributions.
 
-`fire_border()` supplies the same gradient, halo, flame silhouettes and
-continuous border animation to all three graphics. Flames lie outside the
-content rectangle. Normal motion changes flame height; reduced motion changes
-only brightness over four seconds. Metrics and chart labels remain stable.
+`fire_border()` embeds `assets/fire-frame.png` into all three graphics. This
+transparent texture was generated with the built-in imagegen tool using the
+owner's realistic orange-and-gold flame reference. Corners retain proportions;
+edge textures tile at uniform scale rather than stretching. An interior mask
+keeps flames outside the content rectangle. Normal motion uses continuously
+animated SVG turbulence/displacement and brightness; reduced motion switches
+to an undistorted texture with a slower brightness loop. Metrics and chart
+labels remain stable. The PNG is inlined as a data URL, so no external image
+requests are required inside the SVG.
+
+After replacing the PNG texture, regenerate the logo with `make_logo.py` and
+the data graphics with `update_profile.py`, then commit all four assets. The
+daily data workflow remains dependency-free; it reads the existing PNG with
+the standard library. Each standalone SVG contains approximately 2.2MB of
+embedded artwork, so first image loading can take longer than the old vectors.
 
 Published assets are `salva-golden-fire.svg`, `github-golden-fire.svg`, and
 `contributions-golden-fire.svg`. README, generators and the daily workflow must keep

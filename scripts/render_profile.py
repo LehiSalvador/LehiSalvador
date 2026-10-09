@@ -1,7 +1,11 @@
 """Self-contained GitHub-compatible SVG artwork with static fallbacks."""
 
 import datetime as dt
+import base64
+from functools import lru_cache
 from html import escape
+from pathlib import Path
+import struct
 
 try:
     from .profile_data import build_grid
@@ -13,46 +17,76 @@ INK, MUTED, ROSE, GREEN = "#e6edf3", "#9da7b3", "#bc7886", "#39d353"
 PALETTE = ["#1c2530", "#0e4429", "#006d32", "#26a641", GREEN]
 MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 FONT = "Arial, Helvetica, sans-serif"
-FIRE_CSS = '''.fire-tongue{animation:flame-dance 3.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
-@keyframes flame-dance{0%,100%{opacity:.65;transform:scaleY(.75)}50%{opacity:1;transform:scaleY(1.12)}}
+FIRE_CSS = '''.fire-live,.fire-calm{animation:fire-burn 3.6s ease-in-out infinite}
+.fire-calm{display:none}
+@keyframes fire-burn{0%,100%{opacity:.8}50%{opacity:1}}
 @keyframes ember-glow{0%,100%{opacity:.45}50%{opacity:1}}
-.frame-motion{animation:gold-flow 10s linear infinite;stroke-dasharray:200 300}
-@keyframes gold-flow{to{stroke-dashoffset:-1000}}
-@keyframes frame-glow{0%,100%{opacity:.5}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.fire-tongue{animation-name:ember-glow;animation-duration:4s;transform:none}.frame-motion{animation:frame-glow 4s ease-in-out infinite;stroke-dasharray:none}}'''
+@media(prefers-reduced-motion:reduce){.fire-live{display:none}.fire-calm{display:inline;animation-duration:5s}}'''
 
 
-def fire_border(width, height):
-    """Decorative flame silhouettes live outside the content rectangle."""
+@lru_cache(maxsize=1)
+def _fire_texture():
+    png = (Path(__file__).resolve().parents[1] / 'assets/fire-frame.png').read_bytes()
+    if png[:8] != b'\x89PNG\r\n\x1a\n' or png[25] != 6:
+        raise ValueError('Fire texture must be an RGBA PNG')
+    width, height = struct.unpack('>II', png[16:24])
+    return 'data:image/png;base64,' + base64.b64encode(png).decode('ascii'), width, height
+
+
+def fire_border(width: int, height: int) -> str:
+    """Nine-slice real fire texture; mask keeps all flames outside the content."""
+    uri, source_w, source_h = _fire_texture()
     parts = [
-        '<defs><linearGradient id="fire-gold" x1="0" y1="1" x2="0" y2="0">'
-        '<stop offset="0" stop-color="#f18a18"/><stop offset=".45" stop-color="#ffc83d"/>'
-        '<stop offset="1" stop-color="#fff2ba"/></linearGradient>'
-        '<filter id="fire-halo" x="-10%" y="-10%" width="120%" height="120%">'
-        '<feGaussianBlur stdDeviation="3"/></filter></defs>',
-        '<g aria-hidden="true">',
-        f'<rect x="0" y="0" width="{width}" height="{height}" rx="14" fill="none" '
-        'stroke="#ffa51f" stroke-width="10" opacity=".55" filter="url(#fire-halo)"/>',
-        f'<rect x="0" y="0" width="{width}" height="{height}" rx="14" fill="none" '
-        'stroke="#ed9c25" stroke-width="3"/>',
-        f'<rect class="frame-motion" x="0" y="0" width="{width}" height="{height}" rx="14" '
-        'pathLength="1000" fill="none" stroke="#fff0ae" stroke-width="3"/>',
+        f'<defs><image id="fire-texture" width="{source_w}" height="{source_h}" href="{uri}"/>',
+        f'<mask id="fire-ring" maskUnits="userSpaceOnUse" x="-32" y="-32" width="{width + 64}" height="{height + 64}">'
+        f'<rect x="-32" y="-32" width="{width + 64}" height="{height + 64}" fill="white"/>'
+        f'<rect width="{width}" height="{height}" rx="14" fill="black"/></mask>',
+        '<filter id="fire-distortion" x="-4%" y="-4%" width="108%" height="108%">'
+        '<feTurbulence type="fractalNoise" baseFrequency=".025 .06" numOctaves="2" seed="7" result="noise">'
+        '<animate attributeName="baseFrequency" values=".025 .06;.03 .085;.02 .07;.025 .06" dur="4s" repeatCount="indefinite"/>'
+        '</feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>'
+        '</filter></defs>',
     ]
-    positions = []
-    for x in range(20, width - 12, 23):
-        positions.extend(((x, 0, 0), (width - x, height, 180)))
-    for y in range(20, height - 12, 23):
-        positions.extend(((0, height - y, -90), (width, y, 90)))
-    for i, (x, y, angle) in enumerate(positions):
-        scale = .68 + (i * 7 % 11) * .035
-        delay = -(i * .37 % 3.4)
-        parts.append(f'<g transform="translate({x} {y}) rotate({angle}) scale({scale:.3f})">'
-                     f'<g class="fire-tongue" style="animation-delay:{delay:.2f}s">'
-                     '<path d="M-9 1C-12-4-4-8-3-18C1-14 2-10 1-7C7-12 9-7 8-2C7 2 3 4-2 3Z" '
-                     'fill="url(#fire-gold)"/>'
-                     '<path d="M-4 2Q-5-2-1-9Q3-5 2-2Q3 2-4 2Z" fill="#fff3c3" opacity=".85"/>'
-                     '</g></g>')
-    parts.append('</g>')
+    cut_x, cut_y = round(source_w * .16), round(source_h * .16)
+    source_x, source_y = (0, cut_x, source_w - cut_x), (0, cut_y, source_h - cut_y)
+    source_widths = (cut_x, source_w - 2 * cut_x, cut_x)
+    source_heights = (cut_y, source_h - 2 * cut_y, cut_y)
+    target_x, target_y = (-32, 0, width), (-32, 0, height)
+    target_widths, target_heights = (32, width, 32), (32, height, 32)
+    slices = []
+
+    def part(x, y, w, h, sx, sy, sw, sh):
+        slices.append(f'<svg x="{x:.4f}" y="{y:.4f}" width="{w:.4f}" height="{h:.4f}" '
+                      f'viewBox="{sx:.4f} {sy:.4f} {sw:.4f} {sh:.4f}" '
+                      'preserveAspectRatio="none"><use href="#fire-texture"/></svg>')
+
+    for row in range(3):
+        for column in range(3):
+            if row == column == 1:
+                continue
+            if column == 1:
+                # Tile the long edges at uniform scale; stretching would flatten flames.
+                scale = 32 / source_heights[row]
+                tile_w = source_widths[column] * scale
+                offset = 0
+                while offset < width - .0001:
+                    w = min(tile_w, width - offset)
+                    part(offset, target_y[row], w, 32, source_x[column], source_y[row], w / scale, source_heights[row])
+                    offset += w
+            elif row == 1:
+                scale = 32 / source_widths[column]
+                tile_h = source_heights[row] * scale
+                offset = 0
+                while offset < height - .0001:
+                    h = min(tile_h, height - offset)
+                    part(target_x[column], offset, 32, h, source_x[column], source_y[row], source_widths[column], h / scale)
+                    offset += h
+            else:
+                part(target_x[column], target_y[row], target_widths[column], target_heights[row],
+                     source_x[column], source_y[row], source_widths[column], source_heights[row])
+    artwork = ''.join(slices)
+    parts.append(f'<g class="fire-live" aria-hidden="true" mask="url(#fire-ring)"><g filter="url(#fire-distortion)">{artwork}</g></g>')
+    parts.append(f'<g class="fire-calm" aria-hidden="true" mask="url(#fire-ring)">{artwork}</g>')
     return ''.join(parts)
 
 
@@ -62,11 +96,11 @@ def label(x, y, value, size=16, fill=INK, extra=""):
 
 def frame(width, height, heading, title, description, css=""):
     return [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width + 48}" height="{height + 48}" viewBox="-24 -24 {width + 48} {height + 48}" '
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width + 64}" height="{height + 64}" viewBox="-32 -32 {width + 64} {height + 64}" '
         f'role="img" aria-labelledby="title desc" font-family="{FONT}">',
         f'<title id="title">{escape(title)}</title><desc id="desc">{escape(description)}</desc>',
         f'<style>{FIRE_CSS}{css}</style>',
-        f'<rect x="-24" y="-24" width="{width + 48}" height="{height + 48}" fill="{BG}"/>',
+        f'<rect x="-32" y="-32" width="{width + 64}" height="{height + 64}" fill="{BG}"/>',
         f'<rect width="{width}" height="{height}" rx="14" fill="{BG}"/>',
         f'<rect x=".5" y=".5" width="{width - 1}" height="{height - 1}" rx="14" fill="none" stroke="{BORDER}"/>',
         f'<path d="M0 48H{width}" stroke="{BORDER}"/>',
