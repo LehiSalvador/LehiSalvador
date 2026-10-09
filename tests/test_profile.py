@@ -1,6 +1,4 @@
 import datetime as dt
-import base64
-import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
@@ -10,7 +8,6 @@ from unittest.mock import patch
 from scripts.profile_data import build_grid, parse_calendar, summarize
 from scripts.render_profile import render_heatmap, render_stats
 from scripts.update_profile import save_outputs, update, validate_calendar_span
-from scripts.make_pixel_fire import fire_pixels, write_atlas, FRAMES, PIXEL
 
 
 def cell(date, count, level=0):
@@ -19,20 +16,6 @@ def cell(date, count, level=0):
 
 class ContributionTests(unittest.TestCase):
     today = dt.date(2026, 10, 6)
-
-    @unittest.skipUnless(importlib.util.find_spec('PIL'), 'Local artwork build requires Pillow')
-    def test_partial_pixel_at_frame_bottom_cannot_leak_into_next_calendar_frame(self):
-        from PIL import Image
-        with tempfile.TemporaryDirectory() as directory:
-            target = Path(directory) / 'atlas.png'
-            # Actual calendar height is not divisible by the four-pixel block.
-            with patch('scripts.make_pixel_fire.fire_pixels',
-                       side_effect=lambda width, height, frame: [(0, 292, '#ffb62c')] if frame == 0 else []):
-                write_atlas(860, 262, target)
-            with Image.open(target) as atlas:
-                alpha = atlas.getchannel('A')
-                self.assertIsNotNone(alpha.crop((0, 0, 462, 163)).getbbox())
-                self.assertIsNone(alpha.crop((0, 163, 462, 326)).getbbox())
 
     def test_tooltip_counts_include_thousands_and_ignore_future_dates(self):
         markup = '''<td class="ContributionCalendar-day" id="a" data-date="2026-10-05" data-level="4"></td>
@@ -117,18 +100,20 @@ class ContributionTests(unittest.TestCase):
         self.assertIn('infinite', svg)
         self.assertIn('soft-pulse', svg)
 
-    def test_stats_border_keeps_looping_and_reduced_motion_has_no_travel(self):
+    def test_gold_border_stays_visible_while_glowing_and_reduced_motion_stops_particles(self):
         data = summarize([cell('2026-10-05', 1, 1), cell('2026-10-06', 0)], self.today)
         data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
         svg = render_stats(data)
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
-        self.assertIsNotNone(root.find(f".//{ns}image[@class='pixel-fire']"))
-        self.assertIn('infinite', svg)
-        self.assertIn('steps(32,end)', svg)
-        self.assertIn('fire-frames 4s', svg)
-        self.assertIn('.pixel-fire{animation:none', svg)
-        self.assertNotIn('feDisplacementMap', svg)
+        base = root.find(f".//{ns}rect[@class='gold-base']")
+        self.assertIsNotNone(base)
+        self.assertEqual(base.get('fill'), 'none')
+        self.assertEqual(base.get('opacity'), '1')
+        self.assertIn('gold-breathe 6s ease-in-out infinite', svg)
+        self.assertIn('.gold-particle{animation:none!important;opacity:0}', svg)
+        self.assertNotIn('pixel-fire', svg)
+        self.assertNotIn('data:image', svg)
 
     def test_daily_generation_targets_the_readme_assets(self):
         data = summarize([cell('2026-10-05', 1, 1), cell('2026-10-06', 0)], self.today)
@@ -137,35 +122,33 @@ class ContributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             save_outputs(root, data)
-            for name in ('contributions-pixel-fire.svg', 'github-pixel-fire.svg'):
+            for name in ('contributions-gold-aura.svg', 'github-gold-aura.svg'):
                 self.assertIn(f'./assets/{name}', readme)
                 art = (root / 'assets' / name).read_text(encoding='utf-8')
                 ET.fromstring(art)
                 self.assertIn('infinite', art)
 
-    def test_gold_fire_frame_is_shared_by_calendar_and_statistics_without_covering_content(self):
+    def test_gold_particles_travel_outward_without_covering_calendar_or_statistics(self):
         data = summarize([cell('2026-10-05', 2, 1), cell('2026-10-06', 0)], self.today)
         data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
         ns = '{http://www.w3.org/2000/svg}'
-        for renderer in (render_heatmap, render_stats):
-            with self.subTest(renderer=renderer.__name__):
-                root = ET.fromstring(renderer(data))
-                texture = root.find(f".//{ns}image[@class='pixel-fire']")
-                self.assertIsNotNone(texture)
-                self.assertTrue(texture.get('href').startswith('data:image/png;base64,'))
-                clip = root.find(f".//{ns}clipPath[@id='fire-window']/{ns}rect")
-                self.assertIsNotNone(clip)
-                self.assertEqual(float(texture.get('height')), float(clip.get('height')) * FRAMES)
-                self.assertTrue(root.get('viewBox').startswith('-32 -32 '))
-                self.assertNotIn('fire-tongue', renderer(data))
-
-    def test_pixel_fire_has_distinct_frames_a_seamless_loop_and_no_pixels_over_content(self):
-        first, second = fire_pixels(48, 40, 0), fire_pixels(48, 40, 1)
-        self.assertNotEqual(first, second)
-        self.assertEqual(first, fire_pixels(48, 40, FRAMES))
-        for frame in range(FRAMES):
-            for x, y, _ in fire_pixels(48, 40, frame):
-                self.assertFalse(x + PIXEL > 0 and x < 48 and y + PIXEL > 0 and y < 40)
+        for renderer, width, height in ((render_heatmap,860,262),(render_stats,840,880)):
+            root = ET.fromstring(renderer(data))
+            particles = root.findall(f".//{ns}circle[@class='gold-particle']")
+            self.assertGreater(len(particles), 16)
+            self.assertEqual({p.get('data-edge') for p in particles}, {'top','bottom','left','right'})
+            for p in particles:
+                x,y,r = map(float,(p.get('cx'),p.get('cy'),p.get('r')))
+                dx,dy = map(float,(p.get('data-dx'),p.get('data-dy')))
+                edge=p.get('data-edge')
+                if edge=='top': self.assertLess(y+r,0); self.assertLess(dy,0)
+                elif edge=='bottom': self.assertGreater(y-r,height); self.assertGreater(dy,0)
+                elif edge=='left': self.assertLess(x+r,0); self.assertLess(dx,0)
+                else: self.assertGreater(x-r,width); self.assertGreater(dx,0)
+                self.assertGreaterEqual(min(x-r,x+dx-r),-32)
+                self.assertGreaterEqual(min(y-r,y+dy-r),-32)
+                self.assertLessEqual(max(x+r,x+dx+r),width+32)
+                self.assertLessEqual(max(y+r,y+dy+r),height+32)
 
     def test_calendar_has_visible_wave_even_with_no_activity_without_faking_contributions(self):
         data = summarize([cell('2026-10-05', 0), cell('2026-10-06', 0)], self.today)
@@ -181,14 +164,12 @@ class ContributionTests(unittest.TestCase):
 
     def test_published_logo_keeps_glowing_after_entrance_in_both_motion_modes(self):
         root_path = Path(__file__).resolve().parents[1]
-        svg = (root_path / 'assets/salva-pixel-fire.svg').read_text(encoding='utf-8')
+        svg = (root_path / 'assets/salva-gold-aura.svg').read_text(encoding='utf-8')
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
         self.assertIsNotNone(root.find(f".//{ns}g[@class='logo-float']/{ns}g[@class='logo-light']/{ns}text"))
-        texture = root.find(f".//{ns}image[@class='pixel-fire']")
-        self.assertIsNotNone(texture)
-        self.assertEqual(base64.b64decode(texture.get('href').split(',', 1)[1]),
-                         (root_path / 'assets/fire-pixels-card.png').read_bytes())
+        self.assertIsNotNone(root.find(f".//{ns}rect[@class='gold-base']"))
+        self.assertGreater(len(root.findall(f".//{ns}circle[@class='gold-particle']")),16)
         self.assertIn('float 9s ease-in-out infinite', svg)
         self.assertIn('logo-glow 9s ease-in-out infinite', svg)
         reduced = svg.split('@media(prefers-reduced-motion:reduce)', 1)[1]
@@ -201,8 +182,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions-pixel-fire.svg': '<svg>previous calendar</svg>',
-                        'assets/github-pixel-fire.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-gold-aura.svg': '<svg>previous calendar</svg>',
+                        'assets/github-gold-aura.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value='<html>blocked</html>'):
@@ -225,8 +206,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions-pixel-fire.svg': '<svg>previous calendar</svg>',
-                        'assets/github-pixel-fire.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-gold-aura.svg': '<svg>previous calendar</svg>',
+                        'assets/github-gold-aura.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value=markup):

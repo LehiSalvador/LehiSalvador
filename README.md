@@ -9,8 +9,8 @@ Transformo necesidades de negocio en productos digitales y soluciones para opera
 <p><a href="https://salvasystems.site"><b>Salva Systems</b></a> &nbsp; · &nbsp; <a href="#proyectos"><b>Proyectos</b></a> &nbsp; · &nbsp; <a href="#contacto"><b>Contacto</b></a></p>
 
 <p>
-  <img src="./assets/salva-pixel-fire.svg" width="420" alt="Logo oficial de Salva Systems en ASCII con movimiento continuo y marco de llamas doradas animadas." />
-  <img src="./assets/github-pixel-fire.svg" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador con marco de llamas doradas animadas: contribuciones, rachas, días activos y actividad mensual." />
+  <img src="./assets/salva-gold-aura.svg" width="420" alt="Logo oficial de Salva Systems en ASCII con movimiento continuo y marco dorado con brillo suave y partículas en movimiento." />
+  <img src="./assets/github-gold-aura.svg" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador con marco dorado con brillo suave y partículas en movimiento: contribuciones, rachas, días activos y actividad mensual." />
 </p>
 
 </div>
@@ -49,7 +49,7 @@ Empresa de tecnología fundada en **marzo de 2026**, enfocada en digitalización
 ## Contribuciones públicas
 
 <p align="center">
-  <img src="./assets/contributions-pixel-fire.svg" width="860" alt="Calendario de contribuciones públicas de Lehi Salvador con onda luminosa dorada continua, días activos iluminados y marco de llamas doradas animadas." />
+  <img src="./assets/contributions-gold-aura.svg" width="860" alt="Calendario de contribuciones públicas de Lehi Salvador con onda luminosa dorada continua, días activos iluminados y marco dorado con brillo suave y partículas en movimiento." />
 </p>
 
 ## Contacto
@@ -59,7 +59,7 @@ Para proyectos de digitalización, automatización o software empresarial: **[sa
 <details>
 <summary>Acerca de este perfil</summary>
 
-Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. Los tres gráficos tienen marcos de fuego en pixel art con 32 fotogramas distintos en bucle. Una onda luminosa recorre el calendario mientras el perfil está abierto. Con movimiento reducido, el fuego queda estático y se desactivan desplazamientos y efectos de entrada; la onda sigue visible y las cifras permanecen estables.
+Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. Los tres gráficos tienen un marco dorado siempre visible, con brillo suave en bucle y partículas doradas que se alejan lentamente del borde. Una onda luminosa recorre el calendario mientras el perfil está abierto. Con movimiento reducido, se desactivan partículas, desplazamientos y efectos de entrada; el marco conserva su brillo suave; la onda sigue visible y las cifras permanecen estables.
 
 [Guía de mantenimiento](./docs/MAINTENANCE.md) · [Actualización automática](./.github/workflows/update-profile.yml)
 

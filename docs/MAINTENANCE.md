@@ -35,8 +35,8 @@ Current streak tolerates a zero-count unfinished day. The longest streak,
 best day and monthly bars cover the displayed calendar period, not the
 account's entire history. Partial first and last months remain partial.
 When reduced motion is preferred, entrance effects, scaling, logo translation
-and pixel-fire frame playback stop. Opacity changes continue: the logo glows,
-active calendar cells pulse, and the calendar
+and particle translation stop. Opacity changes continue: the logo glows,
+the gold frame breathes, active calendar cells pulse, and the calendar
 wave runs through a sequence of stationary column outlines. This
 keeps the owner's requested ambient animation without spatial movement.
 Final content remains visible when CSS animation is unavailable.
@@ -44,7 +44,7 @@ Final content remains visible when CSS animation is unavailable.
 ## Change the logo
 
 `assets/salva-source.png` is the original Salva Systems image from the account
-avatar. Rebuilding the logo or the pixel-fire atlases requires Pillow:
+avatar. Rebuilding the ASCII logo requires Pillow:
 
 ```sh
 python -m pip install Pillow
@@ -66,7 +66,7 @@ generator require running `python scripts/make_logo.py` locally and committing
 the resulting SVG as well.
 
 The logo and statistics retain 840 × 880 content rectangles inside matching
-904 × 944 viewboxes. The 32px gutter on every side contains the flames without
+904 × 944 viewboxes. The 32px gutter on every side contains the gold particles without
 covering content. Both display at 420px each. Inline images sit side by side on desktop and wrap into separate
 rows when the available width is smaller. The full-width calendar displays at 860px.
 The SVG backgrounds retain contrast in light and dark GitHub themes. For
@@ -87,32 +87,23 @@ fills. The wave remains conspicuous with reduced motion because its stationary
 outlines animate only opacity. It also runs for a calendar with no activity;
 it is decorative, not an indication of contributions.
 
-`scripts/make_pixel_fire.py` draws thirty-two distinct pixel-art frames. Each
-flame tongue grows, leans and fades on its own cycle; colors change
-between frames. Flames reach at most 16px outward; no flashing sparks. Four-pixel blocks use a yellow, gold, orange and red palette.
-Every frame has a transparent interior, so flames never cover content.
+`gold_border()` draws the same vector frame around all three graphics.
+A solid gold base remains fully visible at all times. Layered halo strokes
+and a fine highlight slowly brighten and dim over six seconds; no keyframe
+hides the base outline. Small gold particles emerge from all four edges and
+travel outward over seven to ten seconds. Negative delays stagger their
+cycles so ambient motion is visible without reloading the page. Particle
+positions and travel stay within the 32px gutter, clear of content.
 
-The two committed PNG sprite strips are `fire-pixels-card.png` and
-`fire-pixels-calendar.png`. `fire_border()` embeds the matching strip into
-each SVG. Strips are stored at half resolution with nearest-neighbor
-sampling to preserve pixel edges and keep texture height below 16384px. A clipped window and `steps(32,end)` play the frames at eight frames
-per second in a continuous four-second loop. No distortion filters or external
-image requests are used. Reduced motion displays the first frame.
+All frame artwork is inline SVG: no raster textures, external images,
+JavaScript or filters. With reduced motion, particles are hidden and the
+frame keeps its soft opacity cycle. To change the frame, edit
+`scripts/render_profile.py`, regenerate the logo locally with `make_logo.py`,
+and regenerate data graphics with `update_profile.py`. Commit all three SVGs.
+The daily data workflow remains dependency-free.
 
-To rebuild the fire and all three graphics:
-
-```sh
-python scripts/make_pixel_fire.py
-python scripts/make_logo.py
-python scripts/update_profile.py
-python -m unittest discover -s tests -v
-```
-
-Commit both PNG strips and the three regenerated SVGs. The daily data workflow
-remains dependency-free; it reads the existing strips with the standard library.
-
-Published assets are `salva-pixel-fire.svg`, `github-pixel-fire.svg`, and
-`contributions-pixel-fire.svg`. README, generators and the daily workflow must keep
+Published assets are `salva-gold-aura.svg`, `github-gold-aura.svg`, and
+`contributions-gold-aura.svg`. README, generators and the daily workflow must keep
 these paths aligned. These distinct paths replace older cached artwork.
 Reloading an image is not guaranteed to restart its entrance sequence; ambient
 loops provide visible motion after the entrance has completed.

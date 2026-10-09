@@ -43,7 +43,7 @@ jobs:
       - name: Commit refreshed artwork when changed
         shell: bash
         run: |
-          git add data/contributions.json assets/contributions-pixel-fire.svg assets/github-pixel-fire.svg
+          git add data/contributions.json assets/contributions-gold-aura.svg assets/github-gold-aura.svg
           if git diff --cached --quiet; then
             echo "Contribution artwork is current."
             exit 0
