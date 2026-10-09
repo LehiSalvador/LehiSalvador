@@ -118,18 +118,44 @@ class ContributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             save_outputs(root, data)
-            for name in ('contribution-wave.svg', 'github-metrics.svg'):
+            for name in ('contributions-golden-fire.svg', 'github-golden-fire.svg'):
                 self.assertIn(f'./assets/{name}', readme)
                 art = (root / 'assets' / name).read_text(encoding='utf-8')
                 ET.fromstring(art)
                 self.assertIn('infinite', art)
 
+    def test_gold_fire_frame_is_shared_by_calendar_and_statistics_without_covering_content(self):
+        data = summarize([cell('2026-10-05', 2, 1), cell('2026-10-06', 0)], self.today)
+        data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
+        ns = '{http://www.w3.org/2000/svg}'
+        for renderer in (render_heatmap, render_stats):
+            with self.subTest(renderer=renderer.__name__):
+                root = ET.fromstring(renderer(data))
+                flames = root.findall(f".//{ns}g[@class='fire-tongue']/{ns}path")
+                self.assertGreater(len(flames), 60)
+                self.assertIsNotNone(root.find(f".//{ns}linearGradient[@id='fire-gold']"))
+                self.assertTrue(root.get('viewBox').startswith('-24 -24 '))
+                self.assertIn('ember-glow', renderer(data))
+
+    def test_calendar_has_visible_wave_even_with_no_activity_without_faking_contributions(self):
+        data = summarize([cell('2026-10-05', 0), cell('2026-10-06', 0)], self.today)
+        data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
+        root = ET.fromstring(render_heatmap(data))
+        ns = '{http://www.w3.org/2000/svg}'
+        wave = root.findall(f".//{ns}rect[@class='calendar-wave']")
+        self.assertEqual(len(wave), len(build_grid(data['days'])))
+        self.assertTrue(all(node.get('fill') == 'none' for node in wave))
+        cells = root.findall(f".//{ns}rect[@class='day']")
+        self.assertTrue(all(node.get('fill') == '#1c2530' for node in cells))
+        self.assertIn('0 contribuciones en el último año', ''.join(root.itertext()))
+
     def test_published_logo_keeps_glowing_after_entrance_in_both_motion_modes(self):
         root_path = Path(__file__).resolve().parents[1]
-        svg = (root_path / 'assets/salva-motion.svg').read_text(encoding='utf-8')
+        svg = (root_path / 'assets/salva-golden-fire.svg').read_text(encoding='utf-8')
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
         self.assertIsNotNone(root.find(f".//{ns}g[@class='logo-float']/{ns}g[@class='logo-light']/{ns}text"))
+        self.assertGreater(len(root.findall(f".//{ns}g[@class='fire-tongue']")), 100)
         self.assertIn('float 9s ease-in-out infinite', svg)
         self.assertIn('logo-glow 9s ease-in-out infinite', svg)
         reduced = svg.split('@media(prefers-reduced-motion:reduce)', 1)[1]
@@ -142,8 +168,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contribution-wave.svg': '<svg>previous calendar</svg>',
-                        'assets/github-metrics.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-golden-fire.svg': '<svg>previous calendar</svg>',
+                        'assets/github-golden-fire.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value='<html>blocked</html>'):
@@ -166,8 +192,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contribution-wave.svg': '<svg>previous calendar</svg>',
-                        'assets/github-metrics.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-golden-fire.svg': '<svg>previous calendar</svg>',
+                        'assets/github-golden-fire.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value=markup):
