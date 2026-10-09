@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from scripts.profile_data import build_grid, parse_calendar, summarize
 from scripts.render_profile import render_heatmap, render_stats
-from scripts.update_profile import update, validate_calendar_span
+from scripts.update_profile import save_outputs, update, validate_calendar_span
 
 
 def cell(date, count, level=0):
@@ -76,23 +76,65 @@ class ContributionTests(unittest.TestCase):
         cells = graph.findall(".//{http://www.w3.org/2000/svg}rect[@class='day']")
         self.assertEqual(len(cells), 2)
 
-    def test_integer_counters_keep_integer_frames_and_one_visible_row(self):
+    def test_metrics_show_one_stable_final_value_without_counter_animation(self):
         data = summarize([cell("2026-10-05", 262, 4), cell("2026-10-06", 0)], self.today)
         data.update(username="LehiSalvador", generated_at="2026-10-06T10:00:00Z")
         root = ET.fromstring(render_stats(data))
         ns = '{http://www.w3.org/2000/svg}'
-        strip = root.find(f".//{ns}g[@data-metric='contributions']")
-        self.assertIsNotNone(strip, 'Counter must use one clipped value column')
-        values = [node.text for node in strip.findall(f'{ns}text')]
-        self.assertEqual(values[0], '0')
-        self.assertEqual(values[-1], '262')
-        for value in values:
-            self.assertRegex(value, r'^\d+(?: \d{3})*$')
-        clip = root.find(f".//{ns}clipPath[@id='counter-2']/{ns}rect")
-        self.assertIsNotNone(clip)
-        rows = strip.findall(f'{ns}text')
-        row_spacing = float(rows[1].get('y')) - float(rows[0].get('y'))
-        self.assertLess(float(clip.get('height')), row_spacing)
+        value = root.find(f".//{ns}text[@data-metric='contributions']")
+        self.assertIsNotNone(value, 'Metrics must use one readable final value')
+        self.assertEqual(value.text, '262')
+        self.assertEqual(len(root.findall(f'.//{ns}text[@data-metric]')), 6)
+        self.assertNotIn('counter-strip', render_stats(data))
+
+    def test_calendar_pulses_only_real_activity_and_preserves_counts_and_colors(self):
+        data = summarize([cell('2026-10-05', 262, 4), cell('2026-10-06', 0)], self.today)
+        data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
+        svg = render_heatmap(data)
+        root = ET.fromstring(svg)
+        ns = '{http://www.w3.org/2000/svg}'
+        active = root.findall(f".//{ns}rect[@data-active='true']")
+        self.assertEqual(len(active), 1)
+        self.assertEqual(active[0].get('fill'), '#39d353')
+        self.assertEqual(active[0].find(f'{ns}title').text, '2026-10-05: 262 contribuciones')
+        self.assertIn('infinite', svg)
+        self.assertIn('soft-pulse', svg)
+
+    def test_stats_border_keeps_looping_and_reduced_motion_has_no_travel(self):
+        data = summarize([cell('2026-10-05', 1, 1), cell('2026-10-06', 0)], self.today)
+        data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
+        svg = render_stats(data)
+        root = ET.fromstring(svg)
+        ns = '{http://www.w3.org/2000/svg}'
+        self.assertIsNotNone(root.find(f".//{ns}rect[@class='frame-motion']"))
+        self.assertIn('infinite', svg)
+        self.assertIn('frame-glow', svg)
+        self.assertIn('stroke-dasharray:none', svg)
+
+    def test_daily_generation_targets_the_readme_assets(self):
+        data = summarize([cell('2026-10-05', 1, 1), cell('2026-10-06', 0)], self.today)
+        data.update(username='LehiSalvador', generated_at='2026-10-06T10:00:00Z')
+        readme = (Path(__file__).resolve().parents[1] / 'README.md').read_text(encoding='utf-8')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            save_outputs(root, data)
+            for name in ('contribution-wave.svg', 'github-metrics.svg'):
+                self.assertIn(f'./assets/{name}', readme)
+                art = (root / 'assets' / name).read_text(encoding='utf-8')
+                ET.fromstring(art)
+                self.assertIn('infinite', art)
+
+    def test_published_logo_keeps_glowing_after_entrance_in_both_motion_modes(self):
+        root_path = Path(__file__).resolve().parents[1]
+        svg = (root_path / 'assets/salva-motion.svg').read_text(encoding='utf-8')
+        root = ET.fromstring(svg)
+        ns = '{http://www.w3.org/2000/svg}'
+        self.assertIsNotNone(root.find(f".//{ns}g[@class='logo-float']/{ns}g[@class='logo-light']/{ns}text"))
+        self.assertIn('float 9s ease-in-out infinite', svg)
+        self.assertIn('logo-glow 9s ease-in-out infinite', svg)
+        reduced = svg.split('@media(prefers-reduced-motion:reduce)', 1)[1]
+        self.assertIn('.logo-float{animation:none', reduced)
+        self.assertIn('.logo-light{animation-duration:12s}', reduced)
 
     def test_failed_scrape_preserves_previous_snapshot_and_art(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -100,8 +142,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/public-calendar.svg': '<svg>previous calendar</svg>',
-                        'assets/github-summary.svg': '<svg>previous stats</svg>'}
+                        'assets/contribution-wave.svg': '<svg>previous calendar</svg>',
+                        'assets/github-metrics.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value='<html>blocked</html>'):
@@ -124,8 +166,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/public-calendar.svg': '<svg>previous calendar</svg>',
-                        'assets/github-summary.svg': '<svg>previous stats</svg>'}
+                        'assets/contribution-wave.svg': '<svg>previous calendar</svg>',
+                        'assets/github-metrics.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value=markup):
