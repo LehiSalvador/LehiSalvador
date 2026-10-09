@@ -49,12 +49,16 @@ def write_atlas(width: int, height: int, target: Path) -> None:
 
     frame_w, frame_h = width + 2 * GUTTER, height + 2 * GUTTER
     atlas = Image.new('RGBA', (frame_w, frame_h * FRAMES), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(atlas)
     for frame in range(FRAMES):
-        offset_y = frame * frame_h + GUTTER
+        # A separate canvas clips edge blocks when dimensions are not multiples
+        # of PIXEL; otherwise the last row could leak into the following frame.
+        canvas = Image.new('RGBA', (frame_w, frame_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(canvas)
+        offset_y = GUTTER
         for x, y, color in fire_pixels(width, height, frame):
             draw.rectangle((x + GUTTER, y + offset_y,
                             x + GUTTER + PIXEL - 1, y + offset_y + PIXEL - 1), fill=color)
+        atlas.paste(canvas, (0, frame * frame_h))
     atlas.save(target, optimize=True)
 
 

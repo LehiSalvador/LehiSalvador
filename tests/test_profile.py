@@ -1,5 +1,6 @@
 import datetime as dt
 import base64
+import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
@@ -9,7 +10,7 @@ from unittest.mock import patch
 from scripts.profile_data import build_grid, parse_calendar, summarize
 from scripts.render_profile import render_heatmap, render_stats
 from scripts.update_profile import save_outputs, update, validate_calendar_span
-from scripts.make_pixel_fire import fire_pixels, FRAMES, PIXEL
+from scripts.make_pixel_fire import fire_pixels, write_atlas, FRAMES, PIXEL
 
 
 def cell(date, count, level=0):
@@ -18,6 +19,20 @@ def cell(date, count, level=0):
 
 class ContributionTests(unittest.TestCase):
     today = dt.date(2026, 10, 6)
+
+    @unittest.skipUnless(importlib.util.find_spec('PIL'), 'Local artwork build requires Pillow')
+    def test_partial_pixel_at_frame_bottom_cannot_leak_into_next_calendar_frame(self):
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'atlas.png'
+            # Actual calendar height is not divisible by the four-pixel block.
+            with patch('scripts.make_pixel_fire.fire_pixels',
+                       side_effect=lambda width, height, frame: [(0, 292, '#ffb62c')] if frame == 0 else []):
+                write_atlas(860, 262, target)
+            with Image.open(target) as atlas:
+                alpha = atlas.getchannel('A')
+                self.assertIsNotNone(alpha.crop((0, 0, 924, 326)).getbbox())
+                self.assertIsNone(alpha.crop((0, 326, 924, 652)).getbbox())
 
     def test_tooltip_counts_include_thousands_and_ignore_future_dates(self):
         markup = '''<td class="ContributionCalendar-day" id="a" data-date="2026-10-05" data-level="4"></td>
