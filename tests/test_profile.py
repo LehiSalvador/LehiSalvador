@@ -31,8 +31,8 @@ class ContributionTests(unittest.TestCase):
                 write_atlas(860, 262, target)
             with Image.open(target) as atlas:
                 alpha = atlas.getchannel('A')
-                self.assertIsNotNone(alpha.crop((0, 0, 924, 326)).getbbox())
-                self.assertIsNone(alpha.crop((0, 326, 924, 652)).getbbox())
+                self.assertIsNotNone(alpha.crop((0, 0, 462, 163)).getbbox())
+                self.assertIsNone(alpha.crop((0, 163, 462, 326)).getbbox())
 
     def test_tooltip_counts_include_thousands_and_ignore_future_dates(self):
         markup = '''<td class="ContributionCalendar-day" id="a" data-date="2026-10-05" data-level="4"></td>
@@ -125,7 +125,8 @@ class ContributionTests(unittest.TestCase):
         ns = '{http://www.w3.org/2000/svg}'
         self.assertIsNotNone(root.find(f".//{ns}image[@class='pixel-fire']"))
         self.assertIn('infinite', svg)
-        self.assertIn('steps(16,end)', svg)
+        self.assertIn('steps(32,end)', svg)
+        self.assertIn('fire-frames 4s', svg)
         self.assertIn('.pixel-fire{animation:none', svg)
         self.assertNotIn('feDisplacementMap', svg)
 
@@ -136,7 +137,7 @@ class ContributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             save_outputs(root, data)
-            for name in ('contributions-golden-fire.svg', 'github-golden-fire.svg'):
+            for name in ('contributions-pixel-fire.svg', 'github-pixel-fire.svg'):
                 self.assertIn(f'./assets/{name}', readme)
                 art = (root / 'assets' / name).read_text(encoding='utf-8')
                 ET.fromstring(art)
@@ -180,7 +181,7 @@ class ContributionTests(unittest.TestCase):
 
     def test_published_logo_keeps_glowing_after_entrance_in_both_motion_modes(self):
         root_path = Path(__file__).resolve().parents[1]
-        svg = (root_path / 'assets/salva-golden-fire.svg').read_text(encoding='utf-8')
+        svg = (root_path / 'assets/salva-pixel-fire.svg').read_text(encoding='utf-8')
         root = ET.fromstring(svg)
         ns = '{http://www.w3.org/2000/svg}'
         self.assertIsNotNone(root.find(f".//{ns}g[@class='logo-float']/{ns}g[@class='logo-light']/{ns}text"))
@@ -200,8 +201,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions-golden-fire.svg': '<svg>previous calendar</svg>',
-                        'assets/github-golden-fire.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-pixel-fire.svg': '<svg>previous calendar</svg>',
+                        'assets/github-pixel-fire.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value='<html>blocked</html>'):
@@ -224,8 +225,8 @@ class ContributionTests(unittest.TestCase):
             (root / 'data').mkdir()
             (root / 'assets').mkdir()
             expected = {'data/contributions.json': '{"previous":"valid"}',
-                        'assets/contributions-golden-fire.svg': '<svg>previous calendar</svg>',
-                        'assets/github-golden-fire.svg': '<svg>previous stats</svg>'}
+                        'assets/contributions-pixel-fire.svg': '<svg>previous calendar</svg>',
+                        'assets/github-pixel-fire.svg': '<svg>previous stats</svg>'}
             for name, content in expected.items():
                 (root / name).write_text(content, encoding='utf-8')
             with patch('scripts.update_profile.fetch_calendar', return_value=markup):
