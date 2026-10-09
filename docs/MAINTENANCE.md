@@ -34,7 +34,11 @@ when the workflow runs; they are not a real-time dashboard.
 Current streak tolerates a zero-count unfinished day. The longest streak,
 best day and monthly bars cover the displayed calendar period, not the
 account's entire history. Partial first and last months remain partial.
-All three SVGs show their final content when reduced motion is preferred.
+When reduced motion is preferred, entrance effects, scaling, logo translation
+and the traveling border stop. Slow opacity changes continue: the logo glows,
+active calendar cells pulse, and the complete statistics border glows. This
+keeps the owner's requested ambient animation without spatial movement.
+Final content remains visible when CSS animation is unavailable.
 
 ## Change the logo
 
@@ -47,8 +51,9 @@ python scripts/make_logo.py
 ```
 
 The logo generator converts luminance to monochrome ASCII. Dark background
-pixels become spaces. It reveals the rows over 5.8 seconds and settles into
-a static final frame. Replacing the avatar in GitHub does not automatically
+pixels become spaces. It reveals the rows over 5.8 seconds, then floats gently
+in a nine-second loop. A separate opacity loop keeps running, including on
+cached images after the entrance finishes. Replacing the avatar in GitHub does not automatically
 replace this committed source image.
 
 ## Edit profile content
@@ -66,17 +71,21 @@ The SVG backgrounds retain contrast in light and dark GitHub themes. For
 mobile viewers, the prose below the artwork repeats the role, stack, projects
 and links in selectable, readable text.
 
-## Labels and counter animation
+## Continuous motion and readable metrics
 
 Public labels and profile prose use Spanish. Only the ASCII logo uses a
 monospaced font; card labels use a readable sans-serif family.
 
-Each metric uses a single clipped column of values, advanced by one CSS
-stepped translation. The clip is shorter than the distance between rows,
-so two numbers cannot occupy the visible window at the same time. Integer
-metrics keep integer intermediate values; only the daily average uses one
-decimal. Units remain at a fixed position outside the counter column.
-Both SVG transform attributes and reduced-motion styles retain final values.
+Each metric displays one final value. Numbers do not cycle, scroll or overlap;
+only the outer border loops continuously. Integer metrics remain integers;
+the daily average uses one decimal. Calendar pulses affect only days with
+real public activity, retaining their original color levels and counts.
+
+Published assets are `salva-motion.svg`, `github-metrics.svg`, and
+`contribution-wave.svg`. README, generators and the daily workflow must keep
+these paths aligned. These distinct paths replace older cached artwork.
+Reloading an image is not guaranteed to restart its entrance sequence; ambient
+loops provide visible motion after the entrance has completed.
 
 ## Project presentations
 

@@ -9,8 +9,8 @@ Transformo necesidades de negocio en productos digitales y soluciones para opera
 <p><a href="https://salvasystems.site"><b>Salva Systems</b></a> &nbsp; · &nbsp; <a href="#proyectos"><b>Proyectos</b></a> &nbsp; · &nbsp; <a href="#contacto"><b>Contacto</b></a></p>
 
 <p>
-  <img src="./assets/salva-brand.svg" width="420" alt="Logo oficial de Salva Systems dibujado en ASCII con animación de escritura." />
-  <img src="./assets/github-summary.svg" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador: contribuciones, rachas, días activos y actividad mensual." />
+  <img src="./assets/salva-motion.svg" width="420" alt="Logo oficial de Salva Systems en ASCII con movimiento y brillo continuos." />
+  <img src="./assets/github-metrics.svg" width="420" alt="Estadísticas públicas de GitHub de Lehi Salvador con marco animado: contribuciones, rachas, días activos y actividad mensual." />
 </p>
 
 </div>
@@ -49,7 +49,7 @@ Empresa de tecnología fundada en **marzo de 2026**, enfocada en digitalización
 ## Contribuciones públicas
 
 <p align="center">
-  <img src="./assets/public-calendar.svg" width="860" alt="Calendario animado de contribuciones públicas de Lehi Salvador en GitHub, actualizado diariamente." />
+  <img src="./assets/contribution-wave.svg" width="860" alt="Calendario de contribuciones públicas de Lehi Salvador con pulsos continuos en los días con actividad, actualizado diariamente." />
 </p>
 
 ## Contacto
@@ -59,7 +59,7 @@ Para proyectos de digitalización, automatización o software empresarial: **[sa
 <details>
 <summary>Acerca de este perfil</summary>
 
-Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. Animaciones SVG respetan preferencia de movimiento reducido.
+Logo generado desde identidad oficial de Salva Systems. Calendario y estadísticas muestran datos públicos de GitHub; se actualizan diariamente. Rachas y totales describen período del calendario mostrado. El movimiento continúa mientras el perfil está abierto. Con movimiento reducido, los desplazamientos y efectos de entrada se sustituyen por cambios suaves de brillo; las cifras permanecen estables.
 
 [Guía de mantenimiento](./docs/MAINTENANCE.md) · [Actualización automática](./.github/workflows/update-profile.yml)
 

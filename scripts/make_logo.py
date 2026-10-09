@@ -1,4 +1,4 @@
-"""Sample the official Salva Systems logo into a one-shot ASCII terminal SVG.
+"""Sample the official Salva Systems logo into a continuously animated ASCII SVG.
 
 Local-only dependency: Pillow. Daily statistics workflow does not run this file.
 """
@@ -36,9 +36,14 @@ def render_logo(source):
 @keyframes scan{{0%{{opacity:.8;transform:translateX(0)}}99%{{opacity:.8}}100%{{opacity:0;transform:translateX({art_w}px)}}}}
 .ready{{animation:ready .7s ease-out both;animation-delay:5.8s}}
 @keyframes ready{{from{{opacity:0}}to{{opacity:1}}}}
-@media(prefers-reduced-motion:reduce){{.wipe,.ready{{animation:none!important}}.cursor{{display:none!important}}}}'''
+.logo-float{{animation:float 9s ease-in-out infinite;animation-delay:5.8s}}
+@keyframes float{{0%,100%{{transform:translateY(0)}}50%{{transform:translateY(-8px)}}}}
+.logo-light{{animation:logo-glow 9s ease-in-out infinite}}
+@keyframes logo-glow{{0%,100%{{opacity:1}}50%{{opacity:.72}}}}
+@media(prefers-reduced-motion:reduce){{.wipe,.ready,.logo-float{{animation:none!important}}.cursor{{display:none!important}}.logo-light{{animation-duration:12s}}}}'''
     parts = frame(840, 880, "Salva Systems", "Logo animado de Salva Systems",
-                  "Símbolo y nombre oficiales de Salva Systems dibujados en ASCII, revelados línea por línea. Fundada por Lehi Salvador.", css)
+                  "Símbolo y nombre oficiales de Salva Systems en ASCII, con movimiento y brillo continuos. Con movimiento reducido, solo cambia el brillo. Fundada por Lehi Salvador.", css)
+    parts.append('<g class="logo-float"><g class="logo-light">')
     for row in range(rows):
         characters = []
         for col in range(cols):
@@ -54,6 +59,7 @@ def render_logo(source):
                      f'textLength="{art_w}" lengthAdjust="spacing" clip-path="url(#row{row})">{escape("".join(characters))}</text>')
         parts.append(f'<rect class="cursor" opacity="0" x="{left}" y="{y:.2f}" width="{cell_w:.2f}" height="{cell_h:.2f}" '
                      f'fill="{ROSE}" style="animation-delay:{delay:.4f}s"/>')
+    parts.append('</g></g>')
     parts.append(f'<path d="M24 819H816" stroke="#30363d"/>')
     parts.append(label(25, 843, "Tecnología aplicada a operaciones", 19, MUTED))
     parts.append(label(25, 869, "Lehi Salvador · Founder", 20, INK, 'class="ready"'))
@@ -64,7 +70,7 @@ def render_logo(source):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=ROOT / 'assets/salva-source.png')
-    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-brand.svg')
+    parser.add_argument('--output', type=Path, default=ROOT / 'assets/salva-motion.svg')
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(render_logo(args.source), encoding='utf-8')

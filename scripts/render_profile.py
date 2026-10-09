@@ -39,9 +39,12 @@ def render_heatmap(data):
     width, height, left, top = 860, 262, 49, 85
     step = min(14.4, (width - left - 26) / len(grid))
     cell = step - 3
-    css = '''.day{animation:reveal .55s cubic-bezier(.2,.8,.2,1) both;transform-box:fill-box;transform-origin:center}
+    css = '''.day-entrance{animation:reveal .55s cubic-bezier(.2,.8,.2,1) both;transform-box:fill-box;transform-origin:center}
 @keyframes reveal{0%{opacity:0;transform:scale(.2)}65%{opacity:1;transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.day{animation:none!important}}'''
+.day[data-active="true"]{animation:activity-pulse 8s ease-in-out infinite}
+@keyframes activity-pulse{0%,100%{opacity:1}50%{opacity:.58}}
+@keyframes soft-pulse{0%,100%{opacity:1}50%{opacity:.75}}
+@media(prefers-reduced-motion:reduce){.day-entrance{animation:none!important}.day[data-active="true"]{animation-name:soft-pulse;animation-duration:12s}}'''
     parts = frame(width, height, "Contribuciones públicas", "Calendario de contribuciones de Lehi Salvador",
                   f'{data["total_contributions"]:,} contribuciones entre {data["range"]["start"]} y {data["range"]["end"]}.', css)
     seen = set()
@@ -57,9 +60,12 @@ def render_heatmap(data):
                 if column == 0 or column <= len(grid) - 3:
                     parts.append(label(left + column * step, top - 13, MONTHS[date.month - 1], 11, MUTED))
             delay = .2 + column * .046 + row * .055
-            parts.append(f'<rect class="day" x="{left + column * step:.2f}" y="{top + row * step:.2f}" '
+            parts.append(f'<g class="day-entrance" style="animation-delay:{delay:.3f}s">')
+            active = 'true' if day['count'] else 'false'
+            pulse_delay = -(column * .18 + row * .13)
+            parts.append(f'<rect class="day" data-active="{active}" x="{left + column * step:.2f}" y="{top + row * step:.2f}" '
                          f'width="{cell:.2f}" height="{cell:.2f}" rx="2.4" fill="{PALETTE[day["level"]]}" '
-                         f'style="animation-delay:{delay:.3f}s"><title>{day["date"]}: {day["count"]} contribuciones</title></rect>')
+                         f'style="animation-delay:{pulse_delay:.3f}s"><title>{day["date"]}: {day["count"]} contribuciones</title></rect></g>')
     for row, day in [(1, "Lun"), (3, "Mié"), (5, "Vie")]:
         parts.append(label(16, top + row * step + cell - 1, day, 10, MUTED))
     parts.append(label(49, 213, f'{number(data["total_contributions"])} contribuciones en el último año', 16, INK))
@@ -93,9 +99,10 @@ def render_stats(data):
 @keyframes slide{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .bar{transform-box:fill-box;transform-origin:bottom;animation:grow .7s ease-out both}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.counter-strip{transform:translateY(-960px);animation:count-up 1.2s steps(12,end) both}
-@keyframes count-up{from{transform:translateY(0)}to{transform:translateY(-960px)}}
-@media(prefers-reduced-motion:reduce){.tile,.bar,.counter-strip{animation:none!important}}'''
+.frame-motion{animation:frame-orbit 18s linear infinite;stroke-dasharray:160 840;opacity:.85}
+@keyframes frame-orbit{to{stroke-dashoffset:-1000}}
+@keyframes frame-glow{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.tile,.bar{animation:none!important}.frame-motion{animation:frame-glow 12s ease-in-out infinite;stroke-dasharray:none}}'''
     cur, longest, best = data["current_streak"], data["longest_streak"], data["best_day"]
     n_days = len(data["days"])
     tiles = [
@@ -111,21 +118,12 @@ def render_stats(data):
     for i, (name, value, suffix, caption, color, metric) in enumerate(tiles):
         x, y = 24 + i % 2 * 404, 70 + i // 2 * 145
         start = .35 + i * .14
-        count_start = start + .25
         parts.append(f'<g class="tile" style="animation-delay:{start:.2f}s">')
         parts.append(f'<rect x="{x}" y="{y}" width="388" height="129" rx="9" fill="{PANEL}" stroke="{BORDER}"/>')
         parts.append(label(x + 22, y + 31, name, 24, MUTED))
-        # One fixed clip window and one stepped column: frames cannot overlap.
-        parts.append(f'<defs><clipPath id="counter-{i}"><rect x="{x + 18}" y="{y + 41}" width="352" height="59"/></clipPath></defs>')
-        parts.append(f'<g clip-path="url(#counter-{i})"><g class="counter-strip" data-metric="{metric}" '
-                     f'transform="translate(0 -960)" style="animation-delay:{count_start:.2f}s">')
-        for k in range(13):
-            t = k / 12
-            estimate = value * (1 - (1 - t) ** 3)
-            estimate = round(estimate) if isinstance(value, int) else round(estimate, 1)
-            parts.append(label(x + 22, y + 88 + k * 80, number(estimate), 54, color,
-                               'font-weight="700"'))
-        parts.append('</g></g>')
+        # Metrics stay readable; only the surrounding frame loops.
+        parts.append(label(x + 22, y + 88, number(value), 54, color,
+                           f'font-weight="700" data-metric="{metric}"'))
         if suffix:
             parts.append(label(x + 228, y + 87, suffix, 23, MUTED))
         parts.append(label(x + 22, y + 116, caption, 19, MUTED))
@@ -152,5 +150,7 @@ def render_stats(data):
     parts.append(f'<path d="M24 838H816" stroke="{BORDER}"/>')
     parts.append(label(25, 862, "Actividad pública", 18, ROSE))
     parts.append(label(816, 862, "Actualización diaria", 18, MUTED, 'text-anchor="end"'))
+    parts.append(f'<rect class="frame-motion" x="2" y="2" width="836" height="876" rx="13" '
+                 f'pathLength="1000" fill="none" stroke="{ROSE}" stroke-width="4"/>')
     parts.append('</svg>')
     return ''.join(parts)
