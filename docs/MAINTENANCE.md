@@ -35,15 +35,16 @@ Current streak tolerates a zero-count unfinished day. The longest streak,
 best day and monthly bars cover the displayed calendar period, not the
 account's entire history. Partial first and last months remain partial.
 When reduced motion is preferred, entrance effects, scaling, logo translation
-and the traveling border stop. Slow opacity changes continue: the logo glows,
-active calendar cells pulse, and the complete statistics border glows. This
+and pixel-fire frame playback stop. Opacity changes continue: the logo glows,
+active calendar cells pulse, and the calendar
+wave runs through a sequence of stationary column outlines. This
 keeps the owner's requested ambient animation without spatial movement.
 Final content remains visible when CSS animation is unavailable.
 
 ## Change the logo
 
 `assets/salva-source.png` is the original Salva Systems image from the account
-avatar. Only regeneration of the logo requires Pillow:
+avatar. Rebuilding the logo or the pixel-fire atlases requires Pillow:
 
 ```sh
 python -m pip install Pillow
@@ -64,8 +65,9 @@ file triggers regeneration on the next push to `main`. Changes to the logo
 generator require running `python scripts/make_logo.py` locally and committing
 the resulting SVG as well.
 
-The logo and statistics have matching 840 × 880 viewboxes and display at
-420px each. Inline images sit side by side on desktop and wrap into separate
+The logo and statistics retain 840 × 880 content rectangles inside matching
+904 × 944 viewboxes. The 32px gutter on every side contains the flames without
+covering content. Both display at 420px each. Inline images sit side by side on desktop and wrap into separate
 rows when the available width is smaller. The full-width calendar displays at 860px.
 The SVG backgrounds retain contrast in light and dark GitHub themes. For
 mobile viewers, the prose below the artwork repeats the role, stack, projects
@@ -80,9 +82,36 @@ Each metric displays one final value. Numbers do not cycle, scroll or overlap;
 only the outer border loops continuously. Integer metrics remain integers;
 the daily average uses one decimal. Calendar pulses affect only days with
 real public activity, retaining their original color levels and counts.
+The six-second gold scan outlines calendar columns without changing their
+fills. The wave remains conspicuous with reduced motion because its stationary
+outlines animate only opacity. It also runs for a calendar with no activity;
+it is decorative, not an indication of contributions.
 
-Published assets are `salva-motion.svg`, `github-metrics.svg`, and
-`contribution-wave.svg`. README, generators and the daily workflow must keep
+`scripts/make_pixel_fire.py` draws sixteen distinct pixel-art frames. Each
+flame tongue grows, leans and fades on its own cycle; colors and sparks change
+between frames. Four-pixel blocks use a yellow, gold, orange and red palette.
+Every frame has a transparent interior, so flames never cover content.
+
+The two committed PNG sprite strips are `fire-pixels-card.png` and
+`fire-pixels-calendar.png`. `fire_border()` embeds the matching strip into
+each SVG. A clipped window and `steps(16,end)` play the frames at ten frames
+per second in a continuous 1.6-second loop. No distortion filters or external
+image requests are used. Reduced motion displays the first frame.
+
+To rebuild the fire and all three graphics:
+
+```sh
+python scripts/make_pixel_fire.py
+python scripts/make_logo.py
+python scripts/update_profile.py
+python -m unittest discover -s tests -v
+```
+
+Commit both PNG strips and the three regenerated SVGs. The daily data workflow
+remains dependency-free; it reads the existing strips with the standard library.
+
+Published assets are `salva-golden-fire.svg`, `github-golden-fire.svg`, and
+`contributions-golden-fire.svg`. README, generators and the daily workflow must keep
 these paths aligned. These distinct paths replace older cached artwork.
 Reloading an image is not guaranteed to restart its entrance sequence; ambient
 loops provide visible motion after the entrance has completed.
